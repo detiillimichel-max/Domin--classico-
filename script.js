@@ -6,11 +6,12 @@ class DominoGame {
         this.table = [];
         this.playerScore = 0;
         this.computerScore = 0;
-        this.currentTurn = 'player'; // 'player' or 'computer'
+        this.currentTurn = 'player';
         this.gameOver = false;
         this.passCount = 0;
         
         this.init();
+        this.setupEventListeners();
     }
     
     init() {
@@ -44,7 +45,6 @@ class DominoGame {
     }
     
     findFirstPiece() {
-        // Find the highest double to start
         let highestDouble = null;
         let highestValue = -1;
         
@@ -71,29 +71,34 @@ class DominoGame {
                 this.computerHand = this.computerHand.filter(p => p !== highestDouble);
                 this.currentTurn = 'player';
             }
-        } else {
-            // If no double, take first piece
+        } else if (this.playerHand.length > 0) {
             this.table.push(this.playerHand[0]);
             this.playerHand.shift();
             this.currentTurn = 'computer';
         }
     }
     
-    canPlay(piece, position) {
+    canPlay(piece) {
         if (this.table.length === 0) return true;
-        
         const leftEnd = this.table[0].left;
         const rightEnd = this.table[this.table.length - 1].right;
-        
-        if (position === 'left') {
-            return piece.right === leftEnd || piece.left === leftEnd;
-        } else if (position === 'right') {
-            return piece.left === rightEnd || piece.right === rightEnd;
-        }
-        return false;
+        return (piece.left === leftEnd || piece.right === leftEnd ||
+                piece.left === rightEnd || piece.right === rightEnd);
     }
     
-    playPiece(piece, position, isPlayer) {
+    getPlayPosition(piece) {
+        if (this.table.length === 0) return 'right';
+        const leftEnd = this.table[0].left;
+        const rightEnd = this.table[this.table.length - 1].right;
+        if (piece.right === leftEnd || piece.left === leftEnd) return 'left';
+        if (piece.left === rightEnd || piece.right === rightEnd) return 'right';
+        return null;
+    }
+    
+    playPiece(piece, isPlayer) {
+        const position = this.getPlayPosition(piece);
+        if (!position) return false;
+        
         if (position === 'left') {
             if (piece.right === this.table[0].left) {
                 this.table.unshift(piece);
@@ -111,47 +116,36 @@ class DominoGame {
         if (isPlayer) {
             this.playerHand = this.playerHand.filter(p => p !== piece);
             this.currentTurn = 'computer';
-            this.passCount = 0;
         } else {
             this.computerHand = this.computerHand.filter(p => p !== piece);
             this.currentTurn = 'player';
-            this.passCount = 0;
         }
         
+        this.passCount = 0;
         this.checkGameOver();
         this.render();
         
         if (!this.gameOver && this.currentTurn === 'computer') {
-            setTimeout(() => this.computerPlay(), 500);
+            setTimeout(() => this.computerPlay(), 600);
         }
+        return true;
     }
     
     computerPlay() {
-        if (this.gameOver) return;
+        if (this.gameOver || this.currentTurn !== 'computer') return;
         
-        const leftEnd = this.table[0].left;
-        const rightEnd = this.table[this.table.length - 1].right;
-        
-        // Find playable piece
-        for (let piece of this.computerHand) {
-            if (piece.right === leftEnd || piece.left === leftEnd) {
-                this.playPiece(piece, 'left', false);
-                return;
-            }
-            if (piece.left === rightEnd || piece.right === rightEnd) {
-                this.playPiece(piece, 'right', false);
+        for (let i = 0; i < this.computerHand.length; i++) {
+            if (this.canPlay(this.computerHand[i])) {
+                this.playPiece(this.computerHand[i], false);
                 return;
             }
         }
         
-        // No playable pieces, draw from deck
         if (this.deck.length > 0) {
-            const drawnPiece = this.deck.pop();
-            this.computerHand.push(drawnPiece);
+            this.computerHand.push(this.deck.pop());
             this.render();
             setTimeout(() => this.computerPlay(), 500);
         } else {
-            // Pass turn
             this.passCount++;
             if (this.passCount >= 2) {
                 this.endGame();
@@ -162,53 +156,39 @@ class DominoGame {
         }
     }
     
-    playerPlay(pieceIndex, position) {
-        if (this.gameOver || this.currentTurn !== 'player') return;
-        
+    playerPlay(pieceIndex) {
+        if (this.gameOver || this.currentTurn !== 'player') return false;
         const piece = this.playerHand[pieceIndex];
-        if (this.canPlay(piece, position)) {
-            this.playPiece(piece, position, true);
+        if (this.canPlay(piece)) {
+            return this.playPiece(piece, true);
         }
+        return false;
     }
     
     checkGameOver() {
-        if (this.playerHand.length === 0) {
-            this.endGame('player');
-        } else if (this.computerHand.length === 0) {
-            this.endGame('computer');
-        }
+        if (this.playerHand.length === 0) this.endGame('player');
+        else if (this.computerHand.length === 0) this.endGame('computer');
     }
     
     endGame(winner = null) {
         this.gameOver = true;
         
         if (!winner) {
-            // Calculate scores
             const playerPoints = this.playerHand.reduce((sum, p) => sum + p.left + p.right, 0);
             const computerPoints = this.computerHand.reduce((sum, p) => sum + p.left + p.right, 0);
-            
-            if (playerPoints < computerPoints) {
-                this.playerScore++;
-                alert('Você venceu a rodada!');
-            } else if (computerPoints < playerPoints) {
-                this.computerScore++;
-                alert('Computador venceu a rodada!');
-            } else {
-                alert('Rodada empatada!');
-            }
+            if (playerPoints < computerPoints) this.playerScore++;
+            else if (computerPoints < playerPoints) this.computerScore++;
         } else if (winner === 'player') {
             this.playerScore++;
-            alert('Parabéns! Você venceu a rodada!');
         } else {
             this.computerScore++;
-            alert('Computador venceu a rodada!');
         }
         
         this.updateScores();
         
         if (this.playerScore >= 5 || this.computerScore >= 5) {
             const finalWinner = this.playerScore >= 5 ? 'Jogador' : 'Computador';
-            alert(`🏆 Fim de jogo! ${finalWinner} venceu o jogo! 🏆`);
+            alert(`🏆 ${finalWinner} venceu o jogo! 🏆`);
             this.resetGame();
         } else {
             setTimeout(() => this.resetRound(), 2000);
@@ -224,7 +204,6 @@ class DominoGame {
         this.currentTurn = 'player';
         this.gameOver = false;
         this.passCount = 0;
-        
         this.dealPieces();
         this.findFirstPiece();
         this.render();
@@ -241,37 +220,20 @@ class DominoGame {
         if (this.gameOver || this.currentTurn !== 'player') return;
         
         if (this.deck.length > 0) {
-            const drawnPiece = this.deck.pop();
-            this.playerHand.push(drawnPiece);
+            this.playerHand.push(this.deck.pop());
             this.render();
-            
-            // Check if can play after drawing
-            const leftEnd = this.table[0].left;
-            const rightEnd = this.table[this.table.length - 1].right;
-            const canPlayNow = this.playerHand.some(p => 
-                p.right === leftEnd || p.left === leftEnd ||
-                p.left === rightEnd || p.right === rightEnd
-            );
-            
-            if (!canPlayNow) {
+            if (!this.canPlay(this.playerHand[this.playerHand.length - 1])) {
                 this.currentTurn = 'computer';
                 this.passCount++;
-                if (this.passCount >= 2) {
-                    this.endGame();
-                } else {
-                    setTimeout(() => this.computerPlay(), 500);
-                }
+                if (this.passCount >= 2) this.endGame();
+                else setTimeout(() => this.computerPlay(), 500);
             }
         } else {
             this.currentTurn = 'computer';
             this.passCount++;
-            if (this.passCount >= 2) {
-                this.endGame();
-            } else {
-                setTimeout(() => this.computerPlay(), 500);
-            }
+            if (this.passCount >= 2) this.endGame();
+            else setTimeout(() => this.computerPlay(), 500);
         }
-        
         this.render();
     }
     
@@ -280,89 +242,84 @@ class DominoGame {
         document.getElementById('computer-score').textContent = this.computerScore;
     }
     
+    getDotsHTML(number) {
+        if (number === 0) return '<div style="text-align: center;">⚪</div>';
+        let dots = '';
+        for (let i = 0; i < number; i++) dots += '<div class="dot"></div>';
+        return `<div class="dots-container">${dots}</div>`;
+    }
+    
+    createDominoElement(piece, isPlayable = false, pieceIndex = null) {
+        const domino = document.createElement('div');
+        domino.className = 'domino';
+        
+        const topSide = document.createElement('div');
+        topSide.className = 'domino-side';
+        topSide.innerHTML = this.getDotsHTML(piece.left);
+        
+        const bottomSide = document.createElement('div');
+        bottomSide.className = 'domino-side';
+        bottomSide.innerHTML = this.getDotsHTML(piece.right);
+        
+        domino.appendChild(topSide);
+        domino.appendChild(bottomSide);
+        
+        if (isPlayable && this.currentTurn === 'player' && !this.gameOver && this.canPlay(piece)) {
+            domino.style.cursor = 'pointer';
+            domino.style.border = '3px solid #27ae60';
+            domino.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (this.playerPlay(pieceIndex)) this.render();
+                else alert('❌ Esta peça não pode ser jogada agora!');
+            });
+        } else if (isPlayable && this.currentTurn === 'player' && !this.gameOver) {
+            domino.style.opacity = '0.5';
+        }
+        return domino;
+    }
+    
     render() {
         const playerHandDiv = document.getElementById('player-hand');
         const computerHandDiv = document.getElementById('computer-hand');
         const tableDiv = document.getElementById('table');
         const turnIndicator = document.getElementById('turn-indicator');
         
-        // Render player hand
         playerHandDiv.innerHTML = '';
         this.playerHand.forEach((piece, index) => {
-            const domino = this.createDominoElement(piece, index, true);
-            playerHandDiv.appendChild(domino);
+            playerHandDiv.appendChild(this.createDominoElement(piece, true, index));
         });
         
-        // Render computer hand (face down)
         computerHandDiv.innerHTML = '';
-        this.computerHand.forEach(() => {
+        for (let i = 0; i < this.computerHand.length; i++) {
             const backDomino = document.createElement('div');
-            backDomino.className = 'domino';
-            backDomino.style.background = '#2c3e50';
-            backDomino.style.border = '2px solid #1a252f';
-            backDomino.innerHTML = '<div style="color: white; text-align: center; padding-top: 40px;">?</div>';
+            backDomino.className = 'domino computer-domino-back';
+            backDomino.innerHTML = '?';
             computerHandDiv.appendChild(backDomino);
-        });
+        }
         
-        // Render table
         tableDiv.innerHTML = '';
         this.table.forEach((piece) => {
-            const domino = this.createDominoElement(piece, null, false);
-            tableDiv.appendChild(domino);
+            tableDiv.appendChild(this.createDominoElement(piece, false));
         });
         
-        // Update turn indicator
         if (!this.gameOver) {
-            turnIndicator.textContent = this.currentTurn === 'player' ? '🎲 Sua vez! 🎲' : '🤖 Vez do Computador... 🤖';
-            turnIndicator.style.background = this.currentTurn === 'player' ? '#d4edda' : '#f8d7da';
+            if (this.currentTurn === 'player') {
+                turnIndicator.innerHTML = '🎲 SUA VEZ! Clique nas peças verdes 🎲';
+                turnIndicator.style.background = '#d4edda';
+            } else {
+                turnIndicator.innerHTML = '🤖 VEZ DO COMPUTADOR... Aguarde 🤖';
+                turnIndicator.style.background = '#f8d7da';
+            }
         } else {
-            turnIndicator.textContent = '🔄 Aguardando próxima rodada... 🔄';
+            turnIndicator.innerHTML = '🔄 Aguardando próxima rodada... 🔄';
+            turnIndicator.style.background = '#fff3cd';
         }
     }
     
-    createDominoElement(piece, index, isPlayable) {
-        const domino = document.createElement('div');
-        domino.className = 'domino';
-        
-        const topSide = document.createElement('div');
-        topSide.className = 'domino-side';
-        topSide.textContent = this.getDotsRepresentation(piece.left);
-        
-        const bottomSide = document.createElement('div');
-        bottomSide.className = 'domino-side';
-        bottomSide.textContent = this.getDotsRepresentation(piece.right);
-        
-        domino.appendChild(topSide);
-        domino.appendChild(bottomSide);
-        
-        if (isPlayable && this.currentTurn === 'player' && !this.gameOver) {
-            const leftEnd = this.table[0]?.left;
-            const rightEnd = this.table[this.table.length - 1]?.right;
-            
-            if (this.table.length === 0 || 
-                piece.right === leftEnd || piece.left === leftEnd) {
-                domino.addEventListener('click', () => this.playerPlay(index, 'left'));
-                domino.style.cursor = 'pointer';
-            }
-            if (this.table.length === 0 ||
-                piece.left === rightEnd || piece.right === rightEnd) {
-                domino.addEventListener('click', () => this.playerPlay(index, 'right'));
-                domino.style.cursor = 'pointer';
-            }
-        }
-        
-        return domino;
-    }
-    
-    getDotsRepresentation(number) {
-        const dots = ['⚪', '●', '●●', '●●●', '●●●●', '●●●●●', '●●●●●●'];
-        return dots[number] || number.toString();
+    setupEventListeners() {
+        document.getElementById('reset-game').addEventListener('click', () => this.resetGame());
+        document.getElementById('pass-turn').addEventListener('click', () => this.passTurn());
     }
 }
 
-// Initialize game
 const game = new DominoGame();
-
-// Add event listeners
-document.getElementById('reset-game').addEventListener('click', () => game.resetGame());
-document.getElementById('pass-turn').addEventListener('click', () => game.passTurn());

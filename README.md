@@ -22,7 +22,7 @@ Um jogo de Dominó completo e interativo desenvolvido com HTML, CSS e JavaScript
 
 ```bash
 # Clone o repositório
-git clone https://github.com/seu-usuario/domino-game.git
+git clone https://detiillimichel-max.github.io/Domin--classico-/
 
 # Entre no diretório
 cd domino-game

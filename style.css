@@ -2,6 +2,7 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    user-select: none;
 }
 
 body {
@@ -37,7 +38,6 @@ h1 {
     gap: 40px;
     font-size: 1.2em;
     font-weight: bold;
-    color: #34495e;
 }
 
 .score div {
@@ -69,7 +69,7 @@ h3 {
     flex-wrap: wrap;
     gap: 10px;
     justify-content: center;
-    min-height: 100px;
+    min-height: 120px;
 }
 
 .table {
@@ -96,9 +96,9 @@ h3 {
     border-radius: 10px;
     display: flex;
     flex-direction: column;
-    cursor: pointer;
     transition: transform 0.2s;
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    position: relative;
 }
 
 .domino:hover {
@@ -106,30 +106,28 @@ h3 {
     box-shadow: 0 6px 12px rgba(0,0,0,0.15);
 }
 
-.domino.selected {
-    border: 3px solid #f39c12;
-    box-shadow: 0 0 0 2px #f39c12;
-}
-
 .domino-side {
     flex: 1;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 2em;
+    font-size: 1.5em;
     font-weight: bold;
+    position: relative;
 }
 
 .domino-side:first-child {
     border-bottom: 2px solid #333;
 }
 
-.domino-number {
+.dots-container {
     display: flex;
     flex-wrap: wrap;
-    gap: 5px;
     justify-content: center;
     align-items: center;
+    gap: 5px;
+    width: 100%;
+    height: 100%;
 }
 
 .dot {
@@ -137,6 +135,16 @@ h3 {
     height: 8px;
     background: #333;
     border-radius: 50%;
+}
+
+.computer-domino-back {
+    background: #2c3e50;
+    border: 2px solid #1a252f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2em;
+    color: white;
 }
 
 .buttons {

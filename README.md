@@ -1,6 +1,6 @@
 # 🀫 Jogo de Dominó
 
-Um jogo de Dominó completo e interativo desenvolvido com HTML, CSS e JavaScript puro, com suporte a PWA para jogar offline.
+Um jogo de Dominó completo e interativo desenvolvido com HTML, CSS e JavaScript puro, com suporte a PWA para jogar offline https://detiillimichel-max.github.io/Domin--classico-/
 
 ## 🎮 Funcionalidades
 
